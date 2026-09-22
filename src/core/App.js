@@ -255,6 +255,10 @@ export class App {
     this.loading.setProgress(1, 'Ready');
     this.loading.hide();
 
+    // The contact card waits for the veil to start clearing before its entrance
+    // plays — calling reveal here lands it just after the fade.
+    this.hud.reveal();
+
     this.start();
   }
 

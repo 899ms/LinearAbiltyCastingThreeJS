@@ -1,5 +1,6 @@
 import { ELEMENTS, ELEMENT_META } from '../config/settings.js';
 import { ELEMENT_SIGILS } from './glyphs.js';
+import { CONTACT_MARKUP, ContactCard } from './contact.js';
 
 /**
  * Heads-up display: the ability bar, controls, live stats and toasts.
@@ -64,6 +65,8 @@ export class HUD {
         }).join('')}
       </div>
 
+      ${CONTACT_MARKUP}
+
       <div class="hud__toast" data-toast></div>
       <div class="hud__paused" data-paused>Paused</div>
     `;
@@ -87,6 +90,7 @@ export class HUD {
     this.toast = root.querySelector('[data-toast]');
     this.pausedBadge = root.querySelector('[data-paused]');
     this.abilityBar = root.querySelector('.hud__abilities');
+    this.contact = new ContactCard(root);
   }
 
   /** @param {{silent?: boolean}} [options] */
@@ -95,7 +99,13 @@ export class HUD {
       card.classList.toggle('is-active', key === element);
     }
     const meta = ELEMENT_META[element];
+    this.contact.setAccent(meta?.accent);
     if (meta && !options.silent) this.showToast(`${meta.hint} selected`);
+  }
+
+  /** Play the contact card's entrance once the loading veil is clearing. */
+  reveal() {
+    this.contact.reveal();
   }
 
   /** Highlight the slot while a cast is armed. */
