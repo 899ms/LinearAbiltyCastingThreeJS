@@ -1,6 +1,6 @@
 import {
   WebGLRenderer,
-  PCFSoftShadowMap,
+  PCFShadowMap,
   ACESFilmicToneMapping,
   SRGBColorSpace
 } from 'three';
@@ -24,7 +24,11 @@ export class Renderer {
     this.gl.setSize(window.innerWidth, window.innerHeight, false);
 
     this.gl.shadowMap.enabled = true;
-    this.gl.shadowMap.type = PCFSoftShadowMap;
+    // Not PCFSoftShadowMap: three deprecated it, and the first shadow render
+    // quietly rewrites the type to this one. The shadow type is part of every
+    // lit program's cache key, so anything compiled before that first render —
+    // the whole boot warm-up — was keyed for a type that never draws.
+    this.gl.shadowMap.type = PCFShadowMap;
     // The frame renders the scene several times (depth prepass, distortion,
     // contact shadows, main pass). Automatic updates would rebuild the cascade
     // shadow maps for every one of them, so the app flags a single update per

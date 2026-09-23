@@ -58,6 +58,40 @@ export class AbilityManager {
     this.selected = element;
   }
 
+  /** Registered ability ids, in the order the HUD lists them. */
+  get elements() {
+    return ELEMENTS.filter((element) => ABILITY_TYPES[element]);
+  }
+
+  /**
+   * Build an ability's instances without casting them.
+   *
+   * The pools are lazy on purpose — nothing is constructed *during* a cast — but
+   * something still has to pay for each instance, and by default that is the
+   * cast that first needs it: geometry generation, then a GPU stall while the
+   * driver compiles the shaders those new meshes just brought into the scene.
+   * `App#_precompile` calls this for every element behind the loading screen instead,
+   * so the first cast of a session costs what the fiftieth does.
+   *
+   * It fills the pool to `MAX_CONCURRENT`, not to one. Every cooldown is far
+   * shorter than a cast's lifetime, so casting the same ability again while the
+   * last one is still standing is ordinary play — and each of those overlapping
+   * casts is a fresh instance with its own geometry to build and upload.
+   *
+   * The instances go straight back into the pool, hidden and parented to the
+   * scene, exactly as if they had been cast and retired.
+   *
+   * @returns {import('./Ability.js').Ability[]}
+   */
+  prewarm(element) {
+    const pool = this.pools.get(element);
+    if (!pool) return [];
+    const warmed = [];
+    for (let i = 0; i < MAX_CONCURRENT; i++) warmed.push(pool.acquire());
+    for (const ability of warmed) pool.release(ability);
+    return warmed;
+  }
+
   /**
    * Cast the selected ability along a line.
    *

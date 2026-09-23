@@ -225,6 +225,27 @@ export class BurstSystem {
   }
 
   /**
+   * Put one shell of every mode in the scene, visible, for a warm-up render.
+   *
+   * Each compile-time mode is its own program, built on the first impact that
+   * asks for it. See `DecalSystem#prewarm`.
+   *
+   * @returns {() => void} release
+   */
+  prewarm() {
+    const warmed = Object.values(BurstMode).map((mode) => {
+      const burst = this._poolFor(mode).acquire();
+      burst.mesh.visible = true;
+      this.group.add(burst.mesh);
+      return burst;
+    });
+
+    return () => {
+      for (const burst of warmed) this._poolFor(burst.mode).release(burst);
+    };
+  }
+
+  /**
    * @param {number} mode BurstMode.*
    * @param {THREE.Vector3} position
    */

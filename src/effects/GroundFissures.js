@@ -554,6 +554,30 @@ export class FissureSystem {
   }
 
   /**
+   * Put `count` fissures in the scene, visible, for a warm-up render.
+   *
+   * A fissure owns its buffers and its lip rocks, so each one is a build and an
+   * upload, and the first also compiles both crack passes and the lips' lit
+   * program. They outlive the meteor that made them, so several are standing at
+   * once under steady casting. See `DecalSystem#prewarm`.
+   *
+   * @returns {() => void} release
+   */
+  prewarm(count = 1) {
+    const warmed = [];
+    for (let i = 0; i < count; i++) {
+      const fissure = this.pool.acquire();
+      fissure.group.visible = true;
+      this.group.add(fissure.group);
+      warmed.push(fissure);
+    }
+
+    return () => {
+      for (const fissure of warmed) this.pool.release(fissure);
+    };
+  }
+
+  /**
    * Tear the ground open.
    * @param {THREE.Vector3} position where it was hit
    * @param {object} [options] { radius, life, height }

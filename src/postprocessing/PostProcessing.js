@@ -168,6 +168,27 @@ export class PostProcessing {
     this.distortionPass.enabled = post.enabled;
   }
 
+  /**
+   * Compile `root`'s programs in the background, keyed for the main pass.
+   *
+   * three keys a program on the render target bound when it is built — tone
+   * mapping and output colour space both differ between the canvas and an
+   * offscreen target — and the scene is only ever drawn into the composer's, so
+   * that is the one bound here. The depth and distortion passes draw with an
+   * override material or a different set of lights; those variants are left to
+   * a real frame.
+   *
+   * @returns {Promise} resolves once every program is linked
+   */
+  compileAsync(root = this.scene) {
+    const previous = this.gl.getRenderTarget();
+    this.gl.setRenderTarget(this.composer.readBuffer);
+    // `compile` runs synchronously inside this call; only the wait is async.
+    const done = this.gl.compileAsync(root, this.camera, this.scene);
+    this.gl.setRenderTarget(previous);
+    return done;
+  }
+
   render() {
     this._renderDepth();
     this._renderDistortion();

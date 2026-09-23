@@ -2,25 +2,41 @@
 
 A skillshot VFX sandbox built with **Three.js**, **Vite** and hand-written **GLSL**.
 
-Five abilities and two ways to aim them. Four are **line casts**: press the key to arm, a
+![Nova Beam mid-burn, with the HUD's ability bar, live stats and contact card](docs/screenshots/hud.jpg)
+
+Six abilities and two ways to aim them. Four are **line casts**: press the key to arm, a
 League-of-Legends style arrow appears on the ground and swings with the mouse, click to fire. The
-fifth is a **far cast**: the arrow is replaced by a circle with a deliberately thick boundary that
-follows the cursor and answers the only question a ground-targeted AoE has to answer before you
+other two are **far casts**: the arrow is replaced by a circle with a deliberately thick boundary
+that follows the cursor and answers the only question a ground-targeted AoE has to answer before you
 commit — how much space is this going to take.
+
+<p>
+  <img src="docs/screenshots/aim-arrow.jpg" width="49%" alt="The line-cast aim arrow on the ground" />
+  <img src="docs/screenshots/aim-circle.jpg" width="49%" alt="The far-cast targeting circle and reach ring" />
+</p>
 
 **Q — Frost Lance.** A fracture front races out along the line while a field of ice crystals
 tears up out of the floor behind it — small and dense at your feet, opening into a wall of blades
 at the far end, with a cluster thrown up around the impact point.
+
+![Frost Lance: a field of ice crystals erupting along the cast line](docs/screenshots/frost-lance.jpg)
 
 **E — Storm Lance.** A bolt leaves the caster's hand and a bundle of lightning filaments is drawn
 out behind the strike front, holds while it gutters and re-strikes, then blows out. Sparks come
 off it the whole way, the floor underneath takes a branching electric burn and a dark scorch, and
 the far end gets a shell of ionised air.
 
+![Storm Lance: a bundle of lightning filaments with the ionised shell at the far end](docs/screenshots/storm-lance.jpg)
+
 **R — Cinder Fall.** A burning rock is lobbed downrange on an arc, trailing a raymarched wake of
 burning gas and heating up the whole way: the lava seams splitting its surface prise wider and
 brighter as it comes in. It detonates on arrival, throws its own shattered chunks across the floor, and tears the
 ground open into a network of molten cracks that keep glowing while the crater burns out.
+
+<p>
+  <img src="docs/screenshots/cinder-fall.jpg" width="49%" alt="Cinder Fall: the burning rock in flight, trailing fire" />
+  <img src="docs/screenshots/cinder-fall-impact.jpg" width="49%" alt="Cinder Fall: molten cracks and flying wreckage after the detonation" />
+</p>
 
 **F — Nova Beam.** The caster winds a ball of light up in both hands, pulling motes in out of the
 air, then lets a column of it out along the line — white-hot core, cyan sheath, gold ribbons
@@ -28,11 +44,30 @@ spiralling around it and shock discs racing down it. It *holds* there, burning i
 throwing spray back up the beam, before collapsing to a thread and blinking out. The only cast in
 the sandbox that is still happening a second after it landed.
 
+<p>
+  <img src="docs/screenshots/nova-beam-charge.jpg" width="49%" alt="Nova Beam: the orb winding up in the caster's hands" />
+  <img src="docs/screenshots/nova-beam.jpg" width="49%" alt="Nova Beam: the column burning, with gold coils and shock discs" />
+</p>
+
 **V — Voltaic Snare.** The far cast. A leash of current is whipped out across the floor, and where
 it lands the ring snaps open past its own radius and pulls back onto it: a violet column tears up
 out of the middle, tendrils crawl outward to the boundary, arcs run around the rim and the whole
 disc burns. It holds there re-striking and hauling the air up into the pillar, then collapses to a
 thread. The circle you measured out before the click is exactly the circle you get.
+
+<p>
+  <img src="docs/screenshots/voltaic-snare-snap.jpg" width="49%" alt="Voltaic Snare: the ring snapping open as the column tears up" />
+  <img src="docs/screenshots/voltaic-snare.jpg" width="49%" alt="Voltaic Snare: the violet column, tendrils and burning disc holding" />
+</p>
+
+**X — Glacial Crown.** The second far cast, and the snare's opposite answer to the same circle. A
+cold front races across the floor to the point, the disc freezes out to the boundary, and a ring of
+crystal blades tears up out of the ground around it — the blade nearest the caster first, the wave
+running round both sides to close behind — with a skirt of wreckage banked against their feet. The
+middle stays open: the read is a wall you are looking into. It stands there glinting and breathing
+cold off its rim, then shatters plate by plate and sinks back into the floor.
+
+![Glacial Crown: a ring of ice blades standing around a frozen disc](docs/screenshots/glacial-crown.jpg)
 
 Everything you can see is generated. There are no textures, no sprite sheets and no meshes on
 disk except the character: the crystals are procedural geometry, the bolt is a strip of ribbon
@@ -112,7 +147,8 @@ shown as a visible sky. The stage keeps its flat dark backdrop.
 | **E** (or **2**) | Arm Storm Lance — press again to put it away |
 | **R** (or **3**) | Arm Cinder Fall — press again to put it away |
 | **F** (or **4**) | Arm Nova Beam — press again to put it away |
-| **V** (or **5**) | Arm Voltaic Snare — the far cast, aimed with a circle |
+| **V** (or **5**) | Arm Voltaic Snare — a far cast, aimed with a circle |
+| **X** (or **6**) | Arm Glacial Crown — a far cast, aimed with a circle |
 | **Move the mouse** | Swing the aim arrow, or move the far-cast circle |
 | **Left click** | Cast along the arrow, or drop the circle where it is |
 | **Esc** / **right click** | Cancel an armed cast |
@@ -463,6 +499,8 @@ Press **G** for the panel. Folders: Presets, Global, Aim indicator, Far-cast cir
 Storm Lance, Cinder Fall, Nova Beam, Voltaic Snare, Environment, Post processing, Camera,
 Character. Every folder starts collapsed — there are enough controls here that one open section
 pushes the rest off the screen.
+
+![The VFX editor open on Frost Lance's crystal and ice-material controls, with the sandbox paused mid-eruption](docs/screenshots/editor.jpg)
 
 - **Global** multipliers scale everything at once (speed, glow, noise, particles, lights, impact
   intensity, camera shake, time scale…).

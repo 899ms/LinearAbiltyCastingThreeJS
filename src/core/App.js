@@ -34,6 +34,9 @@ import { settings, ELEMENTS } from '../config/settings.js';
 
 const HDR_URL = './hdri/spruit_sunrise.hdr';
 
+/** Hand the page back for one frame, so the loading veil can repaint. */
+const nextFrame = () => new Promise((resolve) => requestAnimationFrame(() => resolve()));
+
 /**
  * Application root: owns every subsystem and the frame loop.
  *
@@ -248,9 +251,7 @@ export class App {
     this.loading.setProgress(0.5, 'Loading character…');
     await this.character.load(assets);
 
-    this.loading.setProgress(0.85, 'Compiling shaders…');
-    // Compile everything up front so the first cast never stutters.
-    await this.renderer.gl.compileAsync(this.scene, this.camera);
+    await this._precompile(0.6, 0.99);
 
     this.loading.setProgress(1, 'Ready');
     this.loading.hide();
@@ -260,6 +261,110 @@ export class App {
     this.hud.reveal();
 
     this.start();
+  }
+
+  /**
+   * Build every ability and compile everything it draws, behind the loading
+   * veil, so the first cast of a session costs what the fiftieth does.
+   *
+   * This used to be a single `WebGLRenderer#compileAsync` over the scene, and it
+   * was doing close to nothing, for three separate reasons.
+   *
+   * The first is that **the abilities were not in the scene yet.** Their pools
+   * are lazy, so at that point not one ability object existed and there was
+   * nothing of theirs to compile. They are all built first now.
+   *
+   * The second is that **three keys a program on the render target bound when
+   * it is built.** Tone mapping and output colour space both differ between the
+   * canvas and the composer's HDR target, which is the only place the scene is
+   * ever drawn, so every program it produced was keyed for a render that never
+   * happens. `PostProcessing#compileAsync` binds the right target.
+   *
+   * The third is that **the shadow type changed under it.** See the note in
+   * `Renderer` — until that was fixed, a program compiled before the first
+   * shadow render could never be reused, whatever else was right.
+   *
+   * With those fixed the background compile covers the main pass, on the
+   * driver's worker threads, while the veil keeps animating. What it cannot
+   * predict — the depth prepass's override material, the distortion pass's
+   * light-free variants, the shadow casters — is paid by one real frame of the
+   * real pipeline afterwards, which also uploads every vertex buffer.
+   *
+   * @param {number} from progress ratio to start the labels at
+   * @param {number} to   progress ratio to finish on
+   */
+  async _precompile(from, to) {
+    const span = to - from;
+
+    this.loading.setProgress(from, 'Building abilities…');
+    // Building blocks the main thread, so yield first or the label never shows.
+    await nextFrame();
+
+    // Impact-only shaders: these are built on the first decal, shell or crack
+    // of each kind, which is a second hitch a moment after the first cast's.
+    const releaseDecals = this.decals.prewarm();
+    const releaseBursts = this.bursts.prewarm();
+    // One crack network per meteor still burning, at the fastest recast.
+    const meteor = settings.meteor;
+    const releaseFissures = this.fissures.prewarm(
+      Math.min(8, Math.ceil(meteor.fissureLife / Math.max(0.1, meteor.cooldown)))
+    );
+
+    // The arrow and the zone circle are hidden until the first arm, so they
+    // would otherwise compile on the first press of Q.
+    const roots = [this.aim.object3D];
+    for (const element of this.abilities.elements) {
+      for (const ability of this.abilities.prewarm(element)) roots.push(ability.group);
+    }
+
+    this.loading.setProgress(from + span * 0.1, 'Compiling shaders…');
+    await this.post.compileAsync();
+
+    this.loading.setProgress(from + span * 0.9, 'Warming up…');
+    await nextFrame();
+    this._warmDraw(roots);
+
+    releaseDecals();
+    releaseBursts();
+    releaseFissures();
+  }
+
+  /**
+   * One full pipeline frame with `roots` forced visible.
+   *
+   * Visibility and frustum culling are both overridden, because three skips an
+   * invisible subtree outright and a culled mesh never reaches `setProgram` —
+   * either one would leave a shader for the first cast to compile. Only what
+   * this call changed is put back, so a mesh that was hidden by its own
+   * constructor stays hidden.
+   *
+   * @param {THREE.Object3D[]} roots
+   */
+  _warmDraw(roots) {
+    const hidden = [];
+    const culled = [];
+
+    for (const root of roots) {
+      root.traverse((node) => {
+        if (node.visible === false) {
+          node.visible = true;
+          hidden.push(node);
+        }
+        if (node.frustumCulled === true) {
+          node.frustumCulled = false;
+          culled.push(node);
+        }
+      });
+    }
+
+    // Same order as `frame()`, so every pass sees what it will see in flight.
+    this.contactShadows.render(this.scene);
+    this.renderer.gl.shadowMap.needsUpdate = true;
+    this.post.sync(this.elapsed, this.flash);
+    this.post.render();
+
+    for (const node of hidden) node.visible = false;
+    for (const node of culled) node.frustumCulled = true;
   }
 
   start() {
